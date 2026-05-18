@@ -12,12 +12,7 @@ import {
   Routes,
   type RESTPostAPIChatInputApplicationCommandsJSONBody,
 } from "discord.js";
-import {
-  getConfig,
-  upsertConfig,
-  addAdminRole,
-  removeAdminRole,
-} from "./db";
+import { getConfig, upsertConfig, addAdminRole, removeAdminRole } from "./db";
 import { logger } from "../lib/logger";
 
 export const ticketSetupCommand = new SlashCommandBuilder()
@@ -36,16 +31,10 @@ export const ticketSetupCommand = new SlashCommandBuilder()
           .setRequired(true),
       )
       .addStringOption((opt) =>
-        opt
-          .setName("image")
-          .setDescription("رابط صورة لوحة التذاكر (URL)")
-          .setRequired(false),
+        opt.setName("image").setDescription("رابط صورة لوحة التذاكر (URL)").setRequired(false),
       )
       .addStringOption((opt) =>
-        opt
-          .setName("description")
-          .setDescription("وصف لوحة التذاكر")
-          .setRequired(false),
+        opt.setName("description").setDescription("وصف لوحة التذاكر").setRequired(false),
       ),
   )
   .addSubcommand((sub) =>
@@ -66,6 +55,18 @@ export const ticketSetupCommand = new SlashCommandBuilder()
   )
   .addSubcommand((sub) =>
     sub
+      .setName("rating-channel")
+      .setDescription("تحديد قناة إرسال التقييمات")
+      .addChannelOption((opt) =>
+        opt
+          .setName("channel")
+          .setDescription("القناة التي ستُرسل فيها التقييمات")
+          .addChannelTypes(ChannelType.GuildText)
+          .setRequired(true),
+      ),
+  )
+  .addSubcommand((sub) =>
+    sub
       .setName("panel")
       .setDescription("إرسال لوحة التذاكر في قناة")
       .addChannelOption((opt) =>
@@ -81,23 +82,16 @@ export async function handleTicketSetupCommand(
   interaction: ChatInputCommandInteraction,
 ): Promise<void> {
   if (!interaction.guildId) return;
-
   const sub = interaction.options.getSubcommand();
-
-  if (sub === "config") {
-    await handleConfig(interaction);
-  } else if (sub === "add-role") {
-    await handleAddRole(interaction);
-  } else if (sub === "remove-role") {
-    await handleRemoveRole(interaction);
-  } else if (sub === "panel") {
-    await handlePanel(interaction);
-  }
+  if (sub === "config") await handleConfig(interaction);
+  else if (sub === "add-role") await handleAddRole(interaction);
+  else if (sub === "remove-role") await handleRemoveRole(interaction);
+  else if (sub === "rating-channel") await handleRatingChannel(interaction);
+  else if (sub === "panel") await handlePanel(interaction);
 }
 
 async function handleConfig(interaction: ChatInputCommandInteraction): Promise<void> {
   await interaction.deferReply({ ephemeral: true });
-
   const logChannel = interaction.options.getChannel("log_channel", true);
   const image = interaction.options.getString("image") ?? undefined;
   const description = interaction.options.getString("description") ?? undefined;
@@ -113,9 +107,9 @@ async function handleConfig(interaction: ChatInputCommandInteraction): Promise<v
       .setTitle("✅ تم إعداد نظام التذاكر")
       .setColor(0x57f287)
       .addFields(
-        { name: "📋 قناة السجل", value: `<#${logChannel.id}>`, inline: true },
-        ...(image ? [{ name: "🖼️ الصورة", value: "تم تعيينها", inline: true }] : []),
-        ...(description ? [{ name: "📝 الوصف", value: description, inline: false }] : []),
+        { name: "قناة السجل", value: `<#${logChannel.id}>`, inline: true },
+        ...(image ? [{ name: "الصورة", value: "تم تعيينها", inline: true }] : []),
+        ...(description ? [{ name: "الوصف", value: description, inline: false }] : []),
       )
       .setTimestamp();
 
@@ -126,14 +120,33 @@ async function handleConfig(interaction: ChatInputCommandInteraction): Promise<v
   }
 }
 
+async function handleRatingChannel(interaction: ChatInputCommandInteraction): Promise<void> {
+  await interaction.deferReply({ ephemeral: true });
+  const ch = interaction.options.getChannel("channel", true);
+
+  try {
+    await upsertConfig(interaction.guildId!, { ratingChannelId: ch.id });
+    await interaction.editReply({
+      embeds: [
+        new EmbedBuilder()
+          .setTitle("✅ تم تعيين قناة التقييمات")
+          .setDescription(`ستُرسل التقييمات في <#${ch.id}>`)
+          .setColor(0x57f287)
+          .setTimestamp(),
+      ],
+    });
+  } catch (err) {
+    logger.error({ err }, "Error setting rating channel");
+    await interaction.editReply({ content: "❌ حدث خطأ." });
+  }
+}
+
 async function handleAddRole(interaction: ChatInputCommandInteraction): Promise<void> {
   await interaction.deferReply({ ephemeral: true });
-
   const role = interaction.options.getRole("role", true);
 
   try {
     await addAdminRole(interaction.guildId!, role.id);
-
     await interaction.editReply({
       embeds: [
         new EmbedBuilder()
@@ -151,12 +164,10 @@ async function handleAddRole(interaction: ChatInputCommandInteraction): Promise<
 
 async function handleRemoveRole(interaction: ChatInputCommandInteraction): Promise<void> {
   await interaction.deferReply({ ephemeral: true });
-
   const role = interaction.options.getRole("role", true);
 
   try {
     await removeAdminRole(interaction.guildId!, role.id);
-
     await interaction.editReply({
       embeds: [
         new EmbedBuilder()
@@ -174,7 +185,6 @@ async function handleRemoveRole(interaction: ChatInputCommandInteraction): Promi
 
 async function handlePanel(interaction: ChatInputCommandInteraction): Promise<void> {
   await interaction.deferReply({ ephemeral: true });
-
   const targetChannel = interaction.options.getChannel("channel", true);
 
   try {
@@ -188,7 +198,7 @@ async function handlePanel(interaction: ChatInputCommandInteraction): Promise<vo
     }
 
     const embed = new EmbedBuilder()
-      .setTitle("🎫 فتح تذكرة دعم")
+      .setTitle("فتح تذكرة دعم")
       .setDescription(
         config.panelDescription ||
           "اضغط على الزر أدناه لفتح تذكرة دعم وسيقوم فريقنا بمساعدتك في أقرب وقت ممكن.",
@@ -197,14 +207,12 @@ async function handlePanel(interaction: ChatInputCommandInteraction): Promise<vo
       .setFooter({ text: interaction.guild?.name ?? "" })
       .setTimestamp();
 
-    if (config.panelImage) {
-      embed.setImage(config.panelImage);
-    }
+    if (config.panelImage) embed.setImage(config.panelImage);
 
     const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
       new ButtonBuilder()
         .setCustomId("create_ticket")
-        .setLabel("فتح تذكرة 🎫")
+        .setLabel("فتح تذكرة")
         .setStyle(ButtonStyle.Primary),
     );
 

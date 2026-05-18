@@ -8,6 +8,7 @@ export interface TicketConfig {
   adminRoleIds: string[] | null;
   panelImage: string | null;
   panelDescription: string | null;
+  ratingChannelId: string | null;
   updatedAt: Date;
 }
 
@@ -101,6 +102,7 @@ export async function upsertConfig(
       adminRoleIds: [],
       panelImage: null,
       panelDescription: null,
+      ratingChannelId: null,
       ...sanitized,
       updatedAt: now,
     });

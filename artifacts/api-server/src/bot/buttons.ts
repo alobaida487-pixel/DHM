@@ -19,6 +19,14 @@ import {
 import { createTicketChannel, buildTicketEmbed, buildTicketButtons } from "./tickets";
 import { logger } from "../lib/logger";
 
+const STAR_MAP: Record<number, string> = {
+  1: "⭐",
+  2: "⭐⭐",
+  3: "⭐⭐⭐",
+  4: "⭐⭐⭐⭐",
+  5: "⭐⭐⭐⭐⭐",
+};
+
 function getMemberRoleIds(interaction: ButtonInteraction): string[] {
   if (!interaction.member) return [];
   if (interaction.member instanceof GuildMember) {
@@ -55,6 +63,60 @@ export async function handleButton(interaction: ButtonInteraction): Promise<void
     await handleAddMember(interaction);
   } else if (customId === "ticket_delete") {
     await handleDelete(interaction);
+  } else if (customId.startsWith("rate_")) {
+    await handleRating(interaction);
+  }
+}
+
+async function handleRating(interaction: ButtonInteraction): Promise<void> {
+  try {
+    const parts = interaction.customId.split("_");
+    const stars = parseInt(parts[1] ?? "0");
+    const memberId = parts[2] ?? "";
+    const adminId = parts[3] ?? "";
+
+    if (interaction.user.id !== memberId) {
+      await interaction.reply({ content: "❌ هذا التقييم ليس موجهاً لك.", ephemeral: true });
+      return;
+    }
+
+    await interaction.deferUpdate();
+
+    const config = await getConfig(interaction.guildId!);
+    const starLabel = STAR_MAP[stars] ?? "⭐";
+
+    const embed = new EmbedBuilder()
+      .setTitle("تقييم جديد")
+      .setColor(0xffd700)
+      .addFields(
+        { name: "الاداري", value: `<@${adminId}>`, inline: true },
+        { name: "المقيّم", value: `<@${memberId}>`, inline: true },
+        { name: "التقييم", value: starLabel, inline: false },
+      )
+      .setTimestamp();
+
+    if (config?.ratingChannelId) {
+      try {
+        const ratingCh = interaction.guild?.channels.cache.get(config.ratingChannelId) as
+          | TextChannel
+          | undefined;
+        if (ratingCh) await ratingCh.send({ embeds: [embed] });
+      } catch (err) {
+        logger.warn({ err }, "Could not send to rating channel");
+      }
+    }
+
+    const doneEmbed = new EmbedBuilder()
+      .setDescription(`✅ شكراً <@${memberId}>، تم إرسال تقييمك بنجاح!`)
+      .setColor(0x57f287)
+      .setTimestamp();
+
+    await interaction.editReply({ embeds: [doneEmbed], components: [] });
+  } catch (err) {
+    logger.error({ err }, "Error handling rating button");
+    try {
+      await interaction.reply({ content: "❌ حدث خطأ.", ephemeral: true });
+    } catch {}
   }
 }
 
