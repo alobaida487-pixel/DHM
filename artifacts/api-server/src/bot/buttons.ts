@@ -97,8 +97,11 @@ async function handleCreateTicket(interaction: ButtonInteraction): Promise<void>
     );
     const buttons = buildTicketButtons();
 
+    const adminMentions = (config.adminRoleIds ?? []).map((r) => `<@&${r}>`).join(" ");
+    const mentionContent = [`<@${interaction.user.id}>`, adminMentions].filter(Boolean).join(" ");
+
     await channel.send({
-      content: `<@${interaction.user.id}>`,
+      content: mentionContent,
       embeds: [embed],
       components: [buttons],
     });

@@ -80,15 +80,15 @@ export function buildTicketEmbed(
 
 export function buildTicketButtons(): ActionRowBuilder<ButtonBuilder> {
   return new ActionRowBuilder<ButtonBuilder>().addComponents(
-    new ButtonBuilder().setCustomId("ticket_claim").setLabel("استلام ✅").setStyle(ButtonStyle.Success),
-    new ButtonBuilder().setCustomId("ticket_close").setLabel("إغلاق 🔒").setStyle(ButtonStyle.Danger),
+    new ButtonBuilder().setCustomId("ticket_claim").setLabel("استلام").setStyle(ButtonStyle.Success),
+    new ButtonBuilder().setCustomId("ticket_close").setLabel("اغلاق").setStyle(ButtonStyle.Danger),
     new ButtonBuilder()
       .setCustomId("ticket_add_member")
-      .setLabel("إضافة عضو ➕")
+      .setLabel("اضافة عضو")
       .setStyle(ButtonStyle.Primary),
     new ButtonBuilder()
       .setCustomId("ticket_delete")
-      .setLabel("حذف 🗑️")
+      .setLabel("حذف")
       .setStyle(ButtonStyle.Secondary),
   );
 }
