@@ -109,41 +109,21 @@ async function handleRatePrefix(message: Message): Promise<void> {
     return;
   }
 
-  const mentionMatch = message.content.match(/<@!?(\d+)>/);
-  if (!mentionMatch) {
-    await message.reply(`الاستخدام الصحيح: \`${PREFIX} @العضو\``);
-    return;
-  }
-
-  const memberId = mentionMatch[1]!;
   const adminId = message.author.id;
-
-  let targetUser;
-  try {
-    targetUser = await message.client.users.fetch(memberId);
-  } catch {
-    await message.reply("❌ لم يتم العثور على المستخدم.");
-    return;
-  }
-
-  if (targetUser.bot) {
-    await message.reply("❌ لا يمكن إرسال تقييم لبوت.");
-    return;
-  }
 
   const stars = ["⭐", "⭐⭐", "⭐⭐⭐", "⭐⭐⭐⭐", "⭐⭐⭐⭐⭐"];
 
   const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
     stars.map((label, i) =>
       new ButtonBuilder()
-        .setCustomId(`rate_${i + 1}_${memberId}_${adminId}`)
+        .setCustomId(`rate_${i + 1}_${adminId}`)
         .setLabel(label)
         .setStyle(ButtonStyle.Primary),
     ),
   );
 
   const embed = new EmbedBuilder()
-    .setDescription(`<@${memberId}> يرجى تقييم الاداري <@${adminId}> بكل صدق وامانه`)
+    .setDescription(`قيّم الاداري <@${adminId}> بكل صدق وأمانة`)
     .setColor(0xffd700)
     .setTimestamp();
 

@@ -72,11 +72,11 @@ async function handleRating(interaction: ButtonInteraction): Promise<void> {
   try {
     const parts = interaction.customId.split("_");
     const stars = parseInt(parts[1] ?? "0");
-    const memberId = parts[2] ?? "";
-    const adminId = parts[3] ?? "";
+    const adminId = parts[2] ?? "";
+    const raterId = interaction.user.id;
 
-    if (interaction.user.id !== memberId) {
-      await interaction.reply({ content: "❌ هذا التقييم ليس موجهاً لك.", ephemeral: true });
+    if (raterId === adminId) {
+      await interaction.reply({ content: "❌ لا يمكنك تقييم نفسك.", ephemeral: true });
       return;
     }
 
@@ -90,7 +90,7 @@ async function handleRating(interaction: ButtonInteraction): Promise<void> {
       .setColor(0xffd700)
       .addFields(
         { name: "الاداري", value: `<@${adminId}>`, inline: true },
-        { name: "المقيّم", value: `<@${memberId}>`, inline: true },
+        { name: "المقيّم", value: `<@${raterId}>`, inline: true },
         { name: "التقييم", value: starLabel, inline: false },
       )
       .setTimestamp();
@@ -107,7 +107,7 @@ async function handleRating(interaction: ButtonInteraction): Promise<void> {
     }
 
     const doneEmbed = new EmbedBuilder()
-      .setDescription(`✅ شكراً <@${memberId}>، تم إرسال تقييمك بنجاح!`)
+      .setDescription(`✅ شكراً <@${raterId}>، تم إرسال تقييمك بنجاح!`)
       .setColor(0x57f287)
       .setTimestamp();
 
