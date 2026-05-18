@@ -13,7 +13,8 @@
 
 - `DISCORD_BOT_TOKEN` — توكن البوت من Discord Developer Portal
 - `DISCORD_ENABLED` — تفعيل البوت (`true` / `false`)
-- `DATABASE_URL` — رابط PostgreSQL (مُعد تلقائياً)
+
+> لا حاجة لقاعدة بيانات — البيانات تُحفظ في `data/tickets.json` تلقائياً
 
 ## Stack
 
